@@ -24,7 +24,7 @@
 #include <spike/pup/forcesensor.h>
 #include <spike/pup/ultrasonicsensor.h>
 
-
+#include "raspike_imu.h"
 #include "raspike.h"
 #define RP_DEFINE_CMD_SIZE
 #include "raspike_protocol_com.h"
@@ -182,9 +182,7 @@ static void send_ack(RasPikePort port, const char cmd_id, int32_t data)
   raspike_send_data(port,RP_CMD_ID_ACK,(char*)send_data,sizeof(send_data));
 }
 
-/* IMU用の配列 0:ロール(x) 1:ピッチ(y) 2:ヨー(z) */
-float ang[3] = {0}; // 角度(角位置)
-float angv_offset[3] = {0}; // 角速度オフセット
+float test_data[3]; // for debugging
 
 void update_hub_status(RPProtocolSpikeStatus *status)
 {
@@ -193,11 +191,10 @@ void update_hub_status(RPProtocolSpikeStatus *status)
   status->current = hub_battery_get_current();
   hub_button_is_pressed(&button);
   status->button = button;
-  hub_imu_get_angular_velocity(status->angular_velocity);
-  hub_imu_get_acceleration(status->acceleration);
-  status->angular[0] = ang[0];
-  status->angular[1] = ang[1];
-  status->angular[2] = ang[2];
+  raspike_imu_get_angular_velocity((pbio_geometry_xyz_t *)status->angular_velocity, true);
+  raspike_imu_get_acceleration((pbio_geometry_xyz_t *)status->acceleration, true);
+  raspike_imu_get_orientation((pbio_geometry_matrix_3x3_t *)status->rotation_matrix);
+  status->heading = raspike_imu_get_heading(RASPIKE_IMU_HEADING_TYPE_3D);
 }
 
 void update_port_device_colorsensor(unsigned char cmd_id,pup_device_t *dev,RPProtocolPortStatus *status)
@@ -734,8 +731,19 @@ static void process_hub_cmd(RasPikePort port, const int cmd_id, const char *para
     case RP_CMD_ID_HUB_SPK_STP:
       hub_speaker_stop();
       break;
-    case RP_CMD_ID_HUB_RST_ANG:
-      ang[0] = ang[1] = ang[2] = 0;
+    case RP_CMD_ID_HUB_IMU_INIT:
+      {
+        float gyro_stationary_threshold = *(float*)(param+RP_HUB_IMU_INIT_INDEX_GYRO_STAT_THRESH);
+        float accel_stationary_threshold = *(float*)(param+RP_HUB_IMU_INIT_INDEX_ACCEL_STAT_THRESH);
+        float angular_velocity_bias[3];
+        memcpy(angular_velocity_bias,param+RP_HUB_IMU_INIT_INDEX_ANGV_BIAS,3*sizeof(float));
+        float angular_velocity_scale[3];
+        memcpy(angular_velocity_scale,param+RP_HUB_IMU_INIT_INDEX_ANGV_SCALE,3*sizeof(float));
+        float acceleration_correction[6];
+        memcpy(acceleration_correction,param+RP_HUB_IMU_INIT_INDEX_ACCEL_CORRECT,6*sizeof(float));
+        raspike_imu_initialize(gyro_stationary_threshold, accel_stationary_threshold,
+          angular_velocity_bias, angular_velocity_scale, acceleration_correction);
+      }
       break;
 
     default:
@@ -824,40 +832,18 @@ static uint8_t raspike2_startup_image[5][5] = {
   {  0,  0,  0, 0,   0}
 };
 
-/* Gyro sensor implementation is based upon              */
-/* https://qiita.com/koushiro/items/f6cc865e5b2e5b3dd662 */
-/* by @koushiro (Koushiro A)                             */
 
-void identify_angv_offset(float offset[3])
-{
-  float angv[3]; // IMU角速度 格納用配列
-
-  // オフセット同定 (1秒間で1000回測定して平均取る)
-  for(int i=0; i<1000; i++){
-    hub_imu_get_angular_velocity(angv); //角速度取得
-    offset[0] += angv[0];
-    offset[1] += angv[1];
-    offset[2] += angv[2];
-    dly_tsk(1*1000); // 1ms待機
-  }
-
-  // オフセットをサンプル取得回数で割る
-  offset[0] /= 1000;
-  offset[1] /= 1000;
-  offset[2] /= 1000;
-}
 
 
 void main_task(intptr_t exinf)
 {
-  dly_tsk(3*1000*1000); // wait 3 seconds
   hub_imu_init();
 
   serial_opn_por(SIO_USB_PORTID);
   serial_ctl_por(SIO_USB_PORTID,0);
-  // 1秒待ちながらIMUの各速度オフセットを同定する
-  identify_angv_offset(angv_offset);
   sta_cyc(APP_GYRO_CYC);
+  // 1秒待たせる
+  dly_tsk(1000000);
 
   //hub_display_image((uint8_t*)raspike2_image);
 
@@ -945,14 +931,6 @@ void soner_task(intptr_t exinf)
 /* gyro sensor task */
 void gyro_task(intptr_t exinf)
 {
-  float angv[3]; // IMU角速度 格納用配列
-
-  hub_imu_get_angular_velocity(angv);
-
-  // 角度(角位置)積算
-  ang[0] += (angv[0] - angv_offset[0]) * 0.001;
-  ang[1] += (angv[1] - angv_offset[1]) * 0.001;
-  ang[2] += (angv[2] - angv_offset[2]) * 0.001;
-
+  raspike_imu_handle_frame_data(PERIOD_GYRO_TSK);
   ext_tsk();
 }
