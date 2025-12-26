@@ -2,9 +2,6 @@
 	path = external/libpybricks
 	url = https://github.com/shimojima/pybricks-micropython.git
 	branch = etrobo
-[submodule "Unity"]
-	path = external/Unity
-	url = https://github.com/ThrowTheSwitch/Unity.git
 [submodule "drivers/tlsf"]
 	path = drivers/tlsf
 	url = https://github.com/spike-rt/tlsf.git
