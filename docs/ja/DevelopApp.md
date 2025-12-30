@@ -25,20 +25,19 @@ sudo apt install git ruby make gcc-arm-none-eabi
 ## 必要なパッケージのインストール（Windows）
 
 ① python3
-python3.exe - https://pythonlinks.python.jp/ja から python-3.14.0-amd64.exe など
-※必ず、「Add python.exe to PATH」にチェックを入れること
+- python3.exe -- https://pythonlinks.python.jp/ja から python-3.14.0-amd64.exe など
+- ※必ず、「Add python.exe to PATH」にチェックを入れること
 
 ②　pyusb
-Windows PowerShellで、「pip install pyusb」を実行
-※pyusbを入れ忘れると、後々「No module named usb」というエラーで落ちる
+― Windows PowerShellで、「pip install pyusb」を実行
+- ※pyusbを入れ忘れると、後々「No module named usb」というエラーで落ちる
 
-③libusb-win32ドライバー
-- https://zadig.akeo.ie から zadig-*.*.exe をダウンロードし、インストールする
+③libusb-win32ドライバー（一度変更しておけばOK）
+- https://zadig.akeo.ie から zadig-2.9.exe をダウンロードし、インストールする
 - 最初にSPIKE-RTをDFUモードで接続したら、zadigを起動し、「Options」→「List All Devices」
 - 「LEGO Technic Large Hub in DFU Mode」を選ぶ
 - ドライバーを「WinUSB」から「libusb-win32」へ変更し、「Install Driver」を押す
-※一度変更しておけばOK
-※ドライバーが正しくないと、ファイル転送が「No backend available」で失敗する
+- ※ドライバーが正しくないと、ファイル転送が「No backend available」で失敗する
 
 ## ビルド
 
