@@ -4,7 +4,7 @@
 ## ソースコードの入手
 以下により，ソースコードをクローンする．
 ```bash
-git clone git@github.com:spike-rt/spike-rt.git
+git clone https://github.com/shimojima/spike-rt.git -b etrobo
 cd spike-rt
 git submodule update --init ./external/
 ```
@@ -15,29 +15,42 @@ git submodule update --init ./external/
 ## 開発環境の構築
 [Env.md](Env.md)に従って，開発環境を構築する．
 
+## 必要なパッケージのインストール（Ubuntu/WSL2）
+
+```bash
+sudo apt update
+sudo apt install git ruby make gcc-arm-none-eabi
+```
+
+## 必要なパッケージのインストール（Windows）
+
+① python3
+python3.exe - https://pythonlinks.python.jp/ja から python-3.14.0-amd64.exe など
+※必ず、「Add python.exe to PATH」にチェックを入れること
+
+②　pyusb
+Windows PowerShellで、「pip install pyusb」を実行
+※pyusbを入れ忘れると、後々「No module named usb」というエラーで落ちる
+
+③libusb-win32ドライバー
+- https://zadig.akeo.ie から zadig-*.*.exe をダウンロードし、インストールする
+- 最初にSPIKE-RTをDFUモードで接続したら、zadigを起動し、「Options」→「List All Devices」
+- 「LEGO Technic Large Hub in DFU Mode」を選ぶ
+- ドライバーを「WinUSB」から「libusb-win32」へ変更し、「Install Driver」を押す
+※一度変更しておけばOK
+※ドライバーが正しくないと、ファイル転送が「No backend available」で失敗する
+
 ## ビルド
-コンテナ上でターゲットバイナリの生成を行う．
-使用するMakefile のテンプレートが異なるため，カーネルとアプリケーションを分割してコンフィグ及びビルドする．
 
-### コンテナの起動及びシェルへのアタッチ
+### カーネルライブラリの生成
 ```bash
-docker run --rm -it \
-  -v $(pwd):$(pwd) -w $(pwd) \
-  -u "$(id -u $USER):$(id -g $USER)" -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro \
-  ghcr.io/spike-rt/spike-rt:rich /bin/bash
+./script/build-kernel.sh
 ```
 
-### コンフィグ（初回時のみ）
-ビルドの前に テンプレートからビルド用 Makefile の生成を行う．初回時のみ必要である．
+### コンフィグ
+
+ビルドの前にテンプレートからビルド用 Makefile の生成を行う．初回時のみ必要である．
 カーネルとアプリケーションを分割して，ビルドすることを想定している．
-
-カーネル用 Makefile の生成
-```bash
-mkdir -p build/obj-primehub_kernel
-cd build/obj-primehub_kernel
-../../asp3/configure.rb -T primehub_gcc -f -m ../../common/kernel.mk
-cd ../..
-```
 
 アプリケーション用 Makefile の生成
 ```bash
@@ -62,8 +75,6 @@ cd build/obj-primehub_$appname
 モータのサンプル・アプリケーション`sample/motor`のビルド例．
 
 ```bash
-docker run --rm -it -v $(pwd):$(pwd) -w $(pwd) spike-rt-builder /bin/bash
-
 mkdir -p build/obj-primehub_kernel
 cd build/obj-primehub_kernel
 ../../asp3/configure.rb -T primehub_gcc -f -m ../../common/kernel.mk
@@ -72,14 +83,13 @@ cd -
 
 mkdir -p build/obj-primehub_motor
 cd build/obj-primehub_motor
-../../asp3/configure.rb -T primehub_gcc -L ../obj-primehub_kernel -a ../../sample/motor/ -A motor -m ../../common/app.mk
+../../asp3/configure.rb -T primehub_gcc -L ../obj-primehub_kernel -a ../../sample/motor/ -A app -m ../../common/app.mk
 
 make
 cd -
 
 exit
 ```
-
 
 ## 書き込み
 ホスト側で以下を実行し，カレントディレクトリをアプリのビルドディレクトに移動する．（既に移動している場合は不要）
@@ -93,22 +103,11 @@ cd build/obj-primehub_$appname
 - ボタンのLEDが点滅するまで，Bluetoothボタンを押し続ける．
 
 ### 書き込みの実行
-(TODO: これは，Mac でも動作可能？)
-ここでは，USBの権限の問題から，管理者権限により書き込みを行う．
-`PYTHON3`でpythonの実行ファイルを指定し，以下により，Hubに書き込む．
+SPIKE Prime HubをDFUモードにしてPCに接続し、Windows上のpythonをWSL2から起動してasp.binをHubに書き込む
 ```bash
-PYTHON3=../../tools/python/bin/python3 sudo ../../scripts/deploy-dfu.sh asp.bin     
-```
-
-以下のように`make deploy-dfu`を管理者権限で実行することでも可能だが，make の依存関係の問題で上手く動かないことがある．
-```bash
-sudo make deploy-dfu PYTHON3=../../tools/python/bin/python3
+ ../../scripts/deploy-dfu.sh asp.bin     
 ```
 
 ## USBシリアルの接続
-(TODO: これは，Mac でも動作可能？)
-USBシリアルに接続し，ログ出力を確認することができる．
+WindowsのTeratermなどでUSBシリアルに接続し，ログ出力を確認することができる．
 一旦，Hub の電源をONにしてからでないと，接続できないことに注意する．
-```bash
-sudo minicom -D /dev/ttyACM0 -b 115200
-```
