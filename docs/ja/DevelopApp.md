@@ -11,10 +11,6 @@ git submodule update --init ./external/
 以下，特に断りの無い限りトップディレクトリが`spike-rt` のディレクトリであるとする．
 また，アプリケーション・ソースコードのディレクトリが `spike-rt/$appdir`に配置されているとする．
 
-
-## 開発環境の構築
-[Env.md](Env.md)に従って，開発環境を構築する．
-
 ## 必要なパッケージのインストール（Ubuntu/WSL2）
 
 ```bash
@@ -41,62 +37,39 @@ pip install pyusb
  - ドライバーを「WinUSB」から「libusb-win32」へ変更し、「Install Driver」を押す
 - ※ドライバーが正しくないと、ファイル転送が「No backend available」で失敗する
 
-## ビルド
-
-### カーネルライブラリの生成
-```bash
-./scripts/build-kernel.sh
-```
-
-### コンフィグ
-
-ビルドの前にテンプレートからビルド用 Makefile の生成を行う．初回時のみ必要である．
-カーネルとアプリケーションを分割して，ビルドすることを想定している．
-
-アプリケーション用 Makefile の生成
-```bash
-mkdir -p build/obj-primehub_$appname
-cd build/obj-primehub_$appname
-../../asp3/configure.rb -T primehub_gcc -L ../obj-primehub_kernel -a ../../$appdir/ -A $appname -m ../../common/app.mk
-cd ../..
-```
+## 開発手順
+RasPikeやRasPike-ARTに合わせて、sdk/workspace の中に、プロジェクトファイルを置きます。
+例として、RasPike-ART の sample_c5_spike を移植して、sdk/workspace/sample_c5 に置きました。
 
 ### ビルド
-ホスト側で以下を実行し，カレントディレクトリをアプリのビルドディレクトに移動する．
 ```bash
-cd build/obj-primehub_$appname
+cd ~/spike-rt/sdk/workspace
+make img=sample_c5
 ```
-以下により，
+
+asp.binファイルを sdk/workspace フォルダにコピーし、プロジェクトのフォルダ名を appdir に書き込みます。
+
+中間ファイル等は、プロジェクトの下の build フォルダに生成されます。
+カーネルライブラリ等も、必要に応じて自動生成されます。これらはプロジェクト共通のため、
+~/spike-rt/build 以下に保存されます。
+
+### クリーンアップ
+
+プロジェクトの中間ファイル等を消すコマンド：
 ```bash
-(cd ../obj-primehub_kernel && && make libkernel.a) && rm -rf asp asp.bin && make
+cd ~/spike-rt/sdk/workspace
+make clean 
 ```
-再ビルド・再リンクする場合もこのコマンドで良い．
+ただし、影響があるのは、appdir で指定されているプロジェクトだけです。appdirファイルがなかったり別の場所を指している場合は、ほかのプロジェクトのbuildフォルダは触りません。
 
-### 例
-モータのサンプル・アプリケーション`sample/motor`のビルド例．
-
+カーネルライブラリ等も消したければ：
 ```bash
-mkdir -p build/obj-primehub_kernel
-cd build/obj-primehub_kernel
-../../asp3/configure.rb -T primehub_gcc -f -m ../../common/kernel.mk
-make libkernel.a
-cd -
-
-mkdir -p build/obj-primehub_motor
-cd build/obj-primehub_motor
-../../asp3/configure.rb -T primehub_gcc -L ../obj-primehub_kernel -a ../../sample/motor/ -A app -m ../../common/app.mk
-
-make
-cd -
-
-exit
+cd ~/spike-rt/sdk/workspace
+make realclean 
 ```
 
 ## 書き込み
-ホスト側で以下を実行し，カレントディレクトリをアプリのビルドディレクトに移動する．（既に移動している場合は不要）
-```bash
-cd build/obj-primehub_$appname
-```
+SPIKE Prime Hub に転送するファイルは、asp.bin です。
 
 ### HubのDFUモードへの遷移
 - USBケーブルを抜き，Hubの電源を切る．
@@ -106,9 +79,22 @@ cd build/obj-primehub_$appname
 ### 書き込みの実行
 SPIKE Prime HubをDFUモードにしてPCに接続し、Windows上のpythonをWSL2から起動してasp.binをHubに書き込む
 ```bash
- ../../scripts/deploy-dfu.sh asp.bin     
+cd ~/spike-rt/sdk/workspace
+make upload
 ```
+
+sdk/workspace/asp.bin が転送されます。
 
 ## USBシリアルの接続
 WindowsのTeratermなどでUSBシリアルに接続し，ログ出力を確認することができる．
 一旦，Hub の電源をONにしてからでないと，接続できないことに注意する．
+
+## 不要なフォルダ
+
+以下のフォルダは、現時点で使っていません。
+- spike-rt/common
+- spike-rt/sample
+- spike-rt/scripts
+- spike-rt/test
+- spike-rt/tools
+
