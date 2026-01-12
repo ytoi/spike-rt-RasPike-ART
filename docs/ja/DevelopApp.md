@@ -1,16 +1,6 @@
 # アプリケーションの開発方法
 アプリケーション開発における一連の流れを説明する．
 
-## ソースコードの入手
-以下により，ソースコードをクローンする．
-```bash
-git clone https://github.com/shimojima/spike-rt.git -b etrobo
-cd spike-rt
-git submodule update --init ./external/
-```
-以下，特に断りの無い限りトップディレクトリが`spike-rt` のディレクトリであるとする．
-また，アプリケーション・ソースコードのディレクトリが `spike-rt/$appdir`に配置されているとする．
-
 ## 必要なパッケージのインストール（Ubuntu/WSL2）
 
 ```bash
@@ -36,6 +26,14 @@ pip install pyusb
 - 最初にSPIKE-RTをDFUモードで接続したら、zadigを起動し、「Options」→「List All Devices」→ 「LEGO Technic Large Hub in DFU Mode」を選ぶ
  - ドライバーを「WinUSB」から「libusb-win32」へ変更し、「Install Driver」を押す
 - ※ドライバーが正しくないと、ファイル転送が「No backend available」で失敗する
+
+## ソースコードの入手
+以下により，ソースコードをクローンする．
+```bash
+git clone https://github.com/shimojima/spike-rt.git -b etrobo
+```
+以下，特に断りの無い限りトップディレクトリが`spike-rt` のディレクトリであるとする．
+また，アプリケーション・ソースコードのディレクトリが `spike-rt/$appdir`に配置されているとする．
 
 ## 開発手順
 RasPikeやRasPike-ARTに合わせて、sdk/workspace の中に、プロジェクトファイルを置きます。
