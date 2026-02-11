@@ -1,6 +1,7 @@
 [submodule "pybricks-micropython"]
 	path = external/libpybricks
 	url = https://github.com/ytoi/pybricks-micropython.git
+	branch = spike-rt
 [submodule "drivers/tlsf"]
 	path = drivers/tlsf
 	url = https://github.com/spike-rt/tlsf.git
