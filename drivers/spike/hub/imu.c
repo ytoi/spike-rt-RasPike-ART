@@ -6,30 +6,28 @@
  * Copyright (c) 2022 Embedded and Real-Time Systems Laboratory,
  *            Graduate School of Information Science, Nagoya Univ., JAPAN
  */
-
 #include <t_syslog.h>
-#include <spike/hub/light.h>
+#include <spike/hub/imu.h>
 
-#include <pbdrv/imu.h>
+#include <pbio/imu.h>
 
 /*
- * We implement the IMU API by just wrapping functions in external/libpybricks/lib/pbio/drv/imu/imu_lsm6ds3tr_c_stm32.c.
+ * We implement the IMU API by just wrapping functions in external/libpybricks/lib/pbio/src/imu.c.
  */
 
-pbdrv_imu_dev_t *imu_dev;
-
 pbio_error_t hub_imu_init(void) {
-  return pbdrv_imu_get_imu(&imu_dev);
+  pbio_imu_init();
+  return PBIO_SUCCESS;
 }
 
 void hub_imu_get_acceleration(float accel[3]) {
-  pbdrv_imu_accel_read(imu_dev, accel);
+  pbio_imu_get_acceleration((pbio_geometry_xyz_t *) accel, true);
 }
 
 void hub_imu_get_angular_velocity(float angv[3]) {
-  pbdrv_imu_gyro_read(imu_dev, angv);
+  pbio_imu_get_angular_velocity((pbio_geometry_xyz_t *) angv, true);
 }
 
 float hub_imu_get_temperature(void) {
-  return pbdrv_imu_temperature_read(imu_dev);
+  return 0.0;
 }
