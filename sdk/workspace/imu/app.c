@@ -16,6 +16,8 @@ void main_task(intptr_t unused) {
   fprintf(fp, "Start !!\n");
     
   hub_imu_init();
+  pbio_imu_persistent_settings_t settings;
+  pbio_imu_set_default_settings(&settings);
 
   while (1) {
     pbdrv_imu_dev_t *imu_dev;
