@@ -16,13 +16,32 @@
  * We implement the IMU API by just wrapping functions in external/libpybricks/lib/pbio/src/imu.c.
  */
 
+static pbio_imu_persistent_settings_t settings;
 pbio_error_t hub_imu_init(void) {
   pbio_imu_init();
-  pbio_imu_persistent_settings_t settings;
   if (pbio_imu_get_settings(&settings) == PBIO_SUCCESS) {
     pbio_imu_apply_loaded_settings(&settings);
   } else {
+#if 0
     pbio_imu_set_default_settings(&settings);
+#else
+    settings.flags = 0;
+    settings.gyro_stationary_threshold  =    2.0f;
+    settings.accel_stationary_threshold = 2500.0f;
+    settings.gravity_pos.x =  +9969.83984375f;
+    settings.gravity_neg.x =  -9739.06640625f;
+    settings.gravity_pos.y =  +9923.37402344f;
+    settings.gravity_neg.y =  -9842.00488281f;
+    settings.gravity_pos.z =  +9666.05957031f;
+    settings.gravity_neg.z = -10125.87890625f;
+    settings.angular_velocity_bias_start.x = -1.07564986f;
+    settings.angular_velocity_bias_start.y = -2.09562278f;
+    settings.angular_velocity_bias_start.z = -0.96552324f;
+    settings.angular_velocity_scale.x = 363.33685303f;
+    settings.angular_velocity_scale.y = 358.36773682f;
+    settings.angular_velocity_scale.z = 359.43572998f;
+    pbio_imu_apply_loaded_settings(&settings);
+#endif
   }
   return PBIO_SUCCESS;
 }
