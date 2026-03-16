@@ -21,6 +21,9 @@
 
 #define MAIN_STACK_SIZE 4096    /* タスクのスタックサイズ */
 
+/* task periods in micro seconds */
+#define PERIOD_GYRO_TSK      (1 * 1000)
+
 /*
  *  関数のプロトタイプ宣言
  */
@@ -29,6 +32,7 @@
 extern void main_task(intptr_t exinf);
 extern void notify_task(intptr_t exinf);
 extern void soner_task(intptr_t exinf);
+extern void gyro_task(intptr_t exinf);
 
 #endif /* TOPPERS_MACRO_ONLY */
 
