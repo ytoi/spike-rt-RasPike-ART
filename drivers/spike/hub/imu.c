@@ -16,11 +16,19 @@
  * We implement the IMU API by just wrapping functions in external/libpybricks/lib/pbio/src/imu.c.
  */
 
+// Use threshold values, which are more or less constants, to see if data in flash looks OK
+static bool looks_OK(pbio_imu_persistent_settings_t *settings) {
+  if (settings->gyro_stationary_threshold < 0.0f) return false;
+  if (settings->gyro_stationary_threshold > 5.0f) return false;
+  if (settings->accel_stationary_threshold < 2000.0f) return false;
+  if (settings->accel_stationary_threshold > 3000.0f) return false;
+  return true;
+} 
 static pbio_imu_persistent_settings_t settings;
 pbio_error_t hub_imu_init(void) {
   pbio_imu_persistent_settings_t *settings_ptr = NULL;
   pbio_imu_init();
-  if (pbio_imu_get_settings(&settings_ptr) == PBIO_SUCCESS) {
+  if ((pbio_imu_get_settings(&settings_ptr) == PBIO_SUCCESS) && looks_OK(settings_ptr)) {
     pbio_imu_apply_loaded_settings(settings_ptr);
   } else {
 #if 0
