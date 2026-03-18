@@ -18,9 +18,10 @@
 
 static pbio_imu_persistent_settings_t settings;
 pbio_error_t hub_imu_init(void) {
+  pbio_imu_persistent_settings_t *settings_ptr = NULL;
   pbio_imu_init();
-  if (pbio_imu_get_settings(&settings) == PBIO_SUCCESS) {
-    pbio_imu_apply_loaded_settings(&settings);
+  if (pbio_imu_get_settings(&settings_ptr) == PBIO_SUCCESS) {
+    pbio_imu_apply_loaded_settings(settings_ptr);
   } else {
 #if 0
     pbio_imu_set_default_settings(&settings);
